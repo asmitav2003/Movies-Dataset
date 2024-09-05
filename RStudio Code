@@ -1,0 +1,84 @@
+library(tidyverse)
+#read movies_metadata.csv in
+movies <- read_csv("../input/the-movies-dataset/movies_metadata.csv") 
+
+#Remove Scientific Notation
+options(scipen=999)
+
+# Filter data for revenue > 1 million, budget > 1000, runtime > 0
+movies_filtered <- filter(movies, revenue > 1000000, budget > 1000, runtime > 0) %>%
+# Remove unwanted columns
+  select(-"adult", -"belongs_to_collection", -"homepage", -"overview", -"poster_path", -"status", -"video", -"tagline", -"production_companies", -"production_countries", -"spoken_languages") %>%
+# Add columns for net return and Return on investment (ROI)
+  mutate(net_return = revenue - budget, ROI = net_return / budget * 100) 
+# Remove 'The Tiger', an outlier with incorrect data
+  movies_filtered <- movies_filtered[ !(movies_filtered$id %in% c(363093)), ]
+
+glimpse(movies_filtered)
+
+horror          <- filter(movies_filtered, grepl('Horror'         , genres))  #table with movies labeled 'Horror'
+mystery         <- filter(movies_filtered, grepl('Mystery'        , genres))  #table with movies labeled 'Mystery'
+action          <- filter(movies_filtered, grepl('Action'         , genres))  #table with movies labeled 'Action'
+adventure       <- filter(movies_filtered, grepl('Adventure'      , genres))  #table with movies labeled 'Adventure'
+fantasy         <- filter(movies_filtered, grepl('Fantasy'        , genres))  #table with movies labeled 'Fantasy'
+comedy          <- filter(movies_filtered, grepl('Comedy'         , genres))  #table with movies labeled 'Comedy'
+thriller        <- filter(movies_filtered, grepl('Thriller'       , genres))  #table with movies labeled 'Thriller'
+documentary     <- filter(movies_filtered, grepl('Documentary'    , genres))  #table with movies labeled 'Documentary'
+animation       <- filter(movies_filtered, grepl('Animation'      , genres))  #table with movies labeled 'Animation'
+romance         <- filter(movies_filtered, grepl('Romance'        , genres))  #table with movies labeled 'Romance'
+family          <- filter(movies_filtered, grepl('Family'         , genres))  #table with movies labeled 'Family'
+western         <- filter(movies_filtered, grepl('Western'        , genres))  #table with movies labeled 'Western'
+music           <- filter(movies_filtered, grepl('Music'          , genres))  #table with movies labeled 'Music'
+science_fiction <- filter(movies_filtered, grepl('Science Fiction', genres))  #table with movies labeled 'Science Fiction'
+crime           <- filter(movies_filtered, grepl('Crime'          , genres))  #table with movies labeled 'Crime'
+history         <- filter(movies_filtered, grepl('History'        , genres))  #table with movies labeled 'History'
+war             <- filter(movies_filtered, grepl('War'            , genres))  #table with movies labeled 'War'
+
+genre_financials <- data.frame(name = c("Horror", "Mystery", "Action", "Adventure", "Fantasy", "Comedy", "Thriller", "Documentary", "Animation",                                         "Romance", "Family", "Western", "Music", "Science Fiction", "Crime", "History", "War"), 
+                              average_revenue    = c(mean(horror$revenue), mean(mystery$revenue), mean(action$revenue),
+                                                     mean(adventure$revenue), mean(fantasy$revenue), mean(comedy$revenue),
+                                                     mean(thriller$revenue), mean(documentary$revenue), mean(animation$revenue),
+                                                     mean(romance$revenue), mean(family$revenue), mean(western$revenue),
+                                                     mean(music$revenue), mean(science_fiction$revenue), mean(crime$revenue),
+                                                     mean(history$revenue), mean(war$revenue)),
+                              average_net_return = c(mean(horror$net_return), mean(mystery$net_return), mean(action$net_return),
+                                                     mean(adventure$net_return), mean(fantasy$net_return), mean(comedy$net_return),
+                                                     mean(thriller$net_return), mean(documentary$net_return), mean(animation$net_return),
+                                                     mean(romance$net_return), mean(family$net_return), mean(western$net_return),
+                                                     mean(music$net_return), mean(science_fiction$net_return), mean(crime$net_return),
+                                                     mean(history$net_return), mean(war$net_return)),
+                              average_ROI        = c(mean(horror$ROI), mean(mystery$ROI), mean(action$ROI),
+                                                     mean(adventure$ROI), mean(fantasy$ROI), mean(comedy$ROI),
+                                                     mean(thriller$ROI), mean(documentary$ROI), mean(animation$ROI),
+                                                     mean(romance$ROI), mean(family$ROI), mean(western$ROI),
+                                                     mean(music$ROI), mean(science_fiction$ROI), mean(crime$ROI),
+                                                     mean(history$ROI), mean(war$ROI)),
+                              average_budget     = c(mean(horror$budget), mean(mystery$budget), mean(action$budget),
+                                                     mean(adventure$budget), mean(fantasy$budget), mean(comedy$budget),
+                                                     mean(thriller$budget), mean(documentary$budget), mean(animation$budget),
+                                                     mean(romance$budget), mean(family$budget), mean(western$budget),
+                                                     mean(music$budget), mean(science_fiction$budget), mean(crime$budget),
+                                                     mean(history$budget), mean(war$budget)))
+
+#View top 5 Genres by Revenue
+head(slice_head(arrange(genre_financials, desc(average_revenue)), n = 5))
+
+#View top 5 Genres by Net Return
+head(slice_head(arrange(genre_financials, desc(average_net_return)), n = 5))
+
+#View top 5 Genres by ROI
+head(slice_head(arrange(genre_financials, desc(average_ROI)), n = 5))
+
+#Average Revenue by Genre
+ggplot(data = genre_financials, mapping = aes (x = reorder(name, -average_revenue), y = average_revenue)) + geom_bar(color = "black", fill = "#1FA187", stat='identity') + labs(title = "Average Revenue by Genre", y = "Average Revenue", x = "Genre") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+
+#Average Net Return by Genre
+ggplot(data = genre_financials, mapping = aes (x = reorder(name, -average_net_return), y = average_net_return)) + geom_bar(color = "black", fill = "#1FA187", stat='identity') + labs(title = "Average Net Return by Genre", y = "Average Net Return", x = "Genre") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
+
+##Average ROI by Genre
+ggplot(data = genre_financials, mapping = aes (x = reorder(name, -average_ROI), y = average_ROI)) + geom_bar(color = "black", fill = "#1FA187", stat='identity') + labs(title = "Average ROI by Genre", y = "Average ROI", x = "Genre") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+
+ggplot(data = movies_filtered, mapping = aes (x = runtime, y = revenue  )) + geom_point( stat='identity') + geom_smooth() + labs(title = "Net Return by Runtime", y = "Net Return", x = "Runtime")
+
+ggplot(data = filter(movies_filtered, vote_count > 50), mapping = aes (x = vote_average, y = net_return     )) + geom_point(stat='identity') + geom_smooth() + labs(title = "Net Return by Average Rating", y = "Net Return", x = "Average Rating on TMDB")
